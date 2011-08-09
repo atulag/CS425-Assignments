@@ -25,4 +25,11 @@ typedef struct
     short request;
 }client;
 
+/* Additional Function Definitions here */
+
+void error(const char *msg)
+{
+    perror(msg);
+    exit(1);
+}
 
