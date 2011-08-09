@@ -66,26 +66,41 @@ int main(int argc, char *argv[])
          check[i] = buffer[i];
     }
     check[i]='\0';
-    /*if ( strcmp(check,"Rejected") == 0)
+    if ( strcmp(check,"Rejected") == 0)
     {
          close(sockfd);
          return 0;
     }
-    bzero(buffer,256);
-    n = read(sockfd,buffer,255);
-    if (n < 0)
-         error("ERROR reading from socket");
-    printf("%s",buffer);
-    bzero(buffer,256);
-    fgets(buffer,255,stdin);
-    n = write(sockfd,buffer,strlen(buffer));
-    if (n < 0)
-         error("ERROR writing to socket");
-    bzero(buffer,256);
-    n = read(sockfd,buffer,255);
-    if (n < 0)
-         error("ERROR reading from socket");
-    printf("%s",buffer);*/
+    while(1)
+    {
+         bzero(buffer,256);
+         n = read(sockfd,buffer,255);
+         if (n < 0)
+              error("ERROR reading from socket");
+         printf("%s",buffer);
+         bzero(buffer,256);
+         fgets(buffer,255,stdin);
+         n = write(sockfd,buffer,strlen(buffer));
+         if (n < 0)
+              error("ERROR writing to socket");
+         if ((buffer[0] == 'L') || (buffer[0] == 'l'))
+         {
+              bzero(buffer,256);
+              n = read(sockfd,buffer,255);
+              if (n < 0)
+                   error("ERROR reading from socket... exiting");
+              printf("%s",buffer);
+         }
+         else if ((buffer[0] == 'E') || (buffer[0] == 'e'))
+         {
+              bzero(buffer,256);
+              n = read(sockfd,buffer,255);
+              if (n < 0)
+                   error("ERROR reading from socket... exiting");
+              printf("%s",buffer);
+              break;
+         }
+    }
     close(sockfd);
     return 0;
 }

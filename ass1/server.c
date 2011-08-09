@@ -123,6 +123,7 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
         return;
     while(1)
     {
+        sleep(1);
         bzero(buffer,256);
         strcpy(buffer,"Following options are available :\nL\tPrint the list of Online player.\nE\tExit the game.\nEnter your option : ");
         n = write(sock,buffer,strlen(buffer));
@@ -137,9 +138,13 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
         else if ((buffer[0] == 'E') || (buffer[0] == 'e'))
         {
             *numcli = *numcli -1;
+            bzero(buffer,256);
+            strcpy(buffer,"Exiting from game.\n");
+            n = write(sock,buffer,strlen(buffer));
+            if (n < 0)
+                error("ERROR writing on socket... exiting");
             return;
         }
-        sleep(1);
     }
     return;
 }
