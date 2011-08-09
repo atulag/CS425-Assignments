@@ -135,6 +135,7 @@ void acceptRequest(int sock)
     n = read(sock, buffer, 255);
     if (n < 0)
         error("ERROR reading from socket");
+    printf("%s",buffer);
     bzero(buffer,256);
     fgets(buffer,255,stdin);
     n = write(sock, buffer, strlen(buffer) - 1);
@@ -163,5 +164,42 @@ void acceptRequest(int sock)
 
 void sendRequest(int sock)
 {
-
+    int n;
+    char buffer[256];
+    bzero(buffer,256);
+    n = read(sock, buffer, 255);
+    if (n < 0)
+        error("ERROR reading from socket");
+    printf("%s",buffer);
+    bzero(buffer,256);
+    n = read(sock, buffer, 255);
+    if (n < 0)
+        error("ERROR reading from socket");
+    printf("%s",buffer);
+    if (strcmp(buffer,"-1") == 0);
+    else
+        acceptRequest(sock);
+    printf("Enter the name of client with which you want to play : ");
+    bzero(buffer,256);
+    fgets(buffer,255,stdin);
+    n = write(sock, buffer, strlen(buffer) - 1);
+    if (n < 0)
+        error("ERROR writing on socket");
+    bzero(buffer,256);
+    n = read(sock, buffer, 255);
+    if (n < 0)
+        error("ERROR reading from socket");
+    if (buffer[strlen(buffer)-1] == '\n')
+    {
+        printf("%s",buffer);
+        return;
+    }
+    bzero(buffer,256);
+    n = read(sock, buffer, 255);
+    if (n < 0)
+        error("ERROR reading from socket");
+    printf("%s",buffer);
+    if (strlen(buffer) > 35)
+        exit(0);
+    return;
 }
