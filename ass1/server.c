@@ -34,6 +34,7 @@ void error(const char *msg)
 }
 
 void child_pro(client *, struct sockaddr_in, int *, int);
+int addclient(client *, struct sockaddr_in, char [256], int *, int);
 
 /*Main function starts here */
 
@@ -112,10 +113,58 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
     if (n < 0)
         error("ERROR writing to socket... exiting");
     bzero(buffer,256);
-    n = read(sock,buffer,strlen(buffer));
+    n = read(sock,buffer,255);
     if (n < 0)
         error("ERROR reading from socket... exiting");
-    addclient(cli_list,cli_addr,numcli,sock);
-
+    printf("\nLogin name : %s",buffer);
+    n = addclient(cli_list,cli_addr,buffer,numcli,sock);
     return;
+}
+
+int addclient (client *cli_list, struct sockaddr_in cli_addr, char buffer[256], int *numcli, int sock)
+{
+    int i,n;
+    if (*numcli == MAX_Player)
+    {
+        bzero(buffer,256);
+        strcpy(buffer,"Rejected\nServer cannot accomodate more clients.\nTry again after some time.\n");
+        n = write(sock,buffer,strlen(buffer));
+        if (n < 0)
+            error("ERROR writng on socket... exiting");
+        return 0;
+    }
+    //if (*numcli == 0)
+    //    return 1;
+    for(i = 0; i < MAX_Player; i++)
+    {
+        if ((cli_list[i].in_use == 1) && (strcmp(buffer,cli_list[i].login_name) == 0))
+        {
+            bzero(buffer,256);
+            strcpy(buffer,"Rejected\nA client with same login name already exist.\nTry again using different login name.\n");
+            n = write(sock,buffer,strlen(buffer));
+            if (n < 0)
+                error("ERROR writing on socket... exiting");
+            return 0;
+        }
+    }
+    *numcli = *numcli+1;
+    for ( i = 0; i < MAX_Player; i++)
+    {
+        if (cli_list[i].in_use == 0)
+        {
+            cli_list[i].in_use = 1;
+            strcpy(cli_list[i].login_name,buffer);
+            if ((cli_list[i].ip_addr = (char *) inet_ntoa(cli_addr.sin_addr)) < 0)
+                error("ERROR cannot obtain ip address of client... exiting");
+            cli_list[i].portno = ntohs(cli_addr.sin_port);
+            cli_list[i].in_game = 0;
+            cli_list[i].request = -1;
+            bzero(buffer,256);
+            strcpy(buffer,"Logged in successfully.\nNow can play the game.\n");
+            n = write(sock,buffer,strlen(buffer));
+            if (n < 0)
+                error("ERROR writing on socket... exiting");
+            return 1;
+        }
+    }
 }
