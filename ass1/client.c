@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     printf("%s",buffer);
     bzero(buffer,256);
     fgets(buffer,255,stdin);
-    n = write(sockfd,buffer,strlen(buffer));
+    n = write(sockfd,buffer,strlen(buffer)-1);
     if (n < 0) 
          error("ERROR writing to socket");
     bzero(buffer,256);
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
          printf("%s",buffer);
          bzero(buffer,256);
          fgets(buffer,255,stdin);
-         n = write(sockfd,buffer,strlen(buffer));
+         n = write(sockfd,buffer,strlen(buffer)-1);
          if (n < 0)
               error("ERROR writing to socket");
          if ((buffer[0] == 'L') || (buffer[0] == 'l'))
