@@ -70,5 +70,29 @@ int main(int argc, char **argv)
 
     listen(sockfd, 10);
     clilen = sizeof(cli_addr);
+    while(1)
+    {
+        newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+        if (newsockfd < 0)
+            error("ERROR on accept... exiting");
+        pid = fork();
+        if (pid < 0)
+            errro("ERROR on fork... exiting");
+        if (pid == 0)
+        {
+            close(sockfd);
+            child_pro(cli_list,cli_addr,numcli,newsockfd);
+            close(newsockfd);
+            exit(0);
+        }
+        else
+            close(newsockfd);
+        
+    }
+    shmdt((char *) cli_list);
+    shmdt((char *) numcli);
+    shmctl(shm_id1, IPC_RMID, NULL);
+    shmctl(shm_id2, IPC_RMID, NULL);
+    return 0;
    
 }
