@@ -139,6 +139,7 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
         if ((buffer[0] == 'L') || (buffer[0] == 'l'))
         {
             printlist(cli_list,cli_id,sock);
+            sleep(1);
             n = checkRequest(cli_list,cli_id,sock);
             if (n > -1)
             {
@@ -268,6 +269,7 @@ int acceptRequest (client *cli_list, int cli_id, int op_id, int sock)
     strcpy(buffer,"You have a game request from ");
     strcat(buffer,cli_list[op_id].login_name);
     strcat(buffer,".\nDo you want to play(Y/N) : ");
+    sleep(1);
     n = write(sock, buffer, strlen(buffer));
     if (n < 0)
         error("ERROR writing on socket... exiting");
@@ -313,6 +315,7 @@ void sendRequest (client *cli_list, int cli_id, int sock)
     int n,i,op_id=-1;
     char buffer[256];
     printlist(cli_list,cli_id,sock);
+    sleep(1);
     n = checkRequest(cli_list,cli_id,sock);
     if (n > -1)
     {
@@ -375,7 +378,8 @@ void sendRequest (client *cli_list, int cli_id, int sock)
     strcpy(buffer,"Your request has been sent.\nAwaiting opponent response... ");
     n = write(sock, buffer, strlen(buffer));
     if (n < 0)
-    error("ERROR writing on socket... exiting");
+        error("ERROR writing on socket... exiting");
+    sleep(1);
     while(1)
     {
         if (cli_list[cli_id].request == -1)

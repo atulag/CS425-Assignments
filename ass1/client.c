@@ -13,6 +13,9 @@ void error(const char *msg)
     exit(0);
 }
 
+void acceptRequest (int);
+void sendRequest (int);
+
 int main(int argc, char *argv[])
 {
     int sockfd, portno, n,i;
@@ -90,6 +93,25 @@ int main(int argc, char *argv[])
               if (n < 0)
                    error("ERROR reading from socket... exiting");
               printf("%s",buffer);
+              bzero(buffer,256);
+              n = read(sockfd,buffer,255);
+              if (n < 0)
+                   error("ERROR reading from socket... exiting");
+              if (strcmp(buffer,"-1") == 0);
+              else
+                   acceptRequest(sockfd);
+         }
+         else if ((buffer[0] == 'R') || (buffer[0] == 'r'))
+              sendRequest(sockfd);
+         else if ((buffer[0] == 'C') || (buffer[0] == 'c'))
+         {
+              bzero(buffer,256);
+              n = read(sockfd,buffer,255);
+              if (n < 0)
+                   error("ERROR reading from socket... exiting");
+              if (strcmp(buffer,"-1") == 0);
+              else
+                   acceptRequest(sockfd);
          }
          else if ((buffer[0] == 'E') || (buffer[0] == 'e'))
          {
@@ -103,4 +125,43 @@ int main(int argc, char *argv[])
     }
     close(sockfd);
     return 0;
+}
+
+void acceptRequest(int sock)
+{
+    int n;
+    char buffer[256];
+    bzero(buffer,256);
+    n = read(sock, buffer, 255);
+    if (n < 0)
+        error("ERROR reading from socket");
+    bzero(buffer,256);
+    fgets(buffer,255,stdin);
+    n = write(sock, buffer, strlen(buffer) - 1);
+    if (n < 0)
+        error("ERROR writing on socket");
+    if ((buffer[0] == 'y') || (buffer[0] == 'Y'))
+    {
+        bzero(buffer,256);
+        n = read(sock, buffer, 255);
+        if (n < 0)
+            error("ERROR reading from socket");
+        printf("%s",buffer);
+        exit(0);
+    }
+    else if ((buffer[0] == 'n') || (buffer[0] == 'N'))
+    {
+        bzero(buffer,256);
+        n = read(sock, buffer, 255);
+        if (n < 0)
+            error("ERROR reading from socket");
+        printf("%s",buffer);
+    }
+    return;
+
+}
+
+void sendRequest(int sock)
+{
+
 }
