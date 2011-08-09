@@ -35,6 +35,7 @@ void error(const char *msg)
 
 void child_pro(client *, struct sockaddr_in, int *, int);
 int addclient(client *, struct sockaddr_in, char [256], int *, int);
+void printlist(client *,int);
 
 /*Main function starts here */
 
@@ -118,6 +119,28 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
         error("ERROR reading from socket... exiting");
     printf("\nLogin name : %s",buffer);
     n = addclient(cli_list,cli_addr,buffer,numcli,sock);
+    if (n == 0)
+        return;
+    while(1)
+    {
+        bzero(buffer,256);
+        strcpy(buffer,"Following options are available :\nL\tPrint the list of Online player.\nE\tExit the game.\nEnter your option : ");
+        n = write(sock,buffer,strlen(buffer));
+        if (n < 0)
+            error("ERROR writing on socket... exiting");
+        bzero(buffer,256);
+        n = read(sock,buffer,255);
+        if (n < 0)
+            error("ERROR reading from socket... exiting");
+        if ((buffer[0] == 'L') || (buffer[0] == 'l'))
+            printlist(cli_list,sock);
+        else if ((buffer[0] == 'E') || (buffer[0] == 'e'))
+        {
+            *numcli = *numcli -1;
+            return;
+        }
+        sleep(1);
+    }
     return;
 }
 
@@ -162,7 +185,7 @@ int addclient (client *cli_list, struct sockaddr_in cli_addr, char buffer[256], 
             cli_list[i].in_game = 0;
             cli_list[i].request = -1;
             bzero(buffer,256);
-            strcpy(buffer,"Logged in successfully.\nNow can play the game.\n");
+            strcpy(buffer,"Logged in successfully.\nNow you can play the game.\n");
             n = write(sock,buffer,strlen(buffer));
             if (n < 0)
                 error("ERROR writing on socket... exiting");
@@ -170,4 +193,22 @@ int addclient (client *cli_list, struct sockaddr_in cli_addr, char buffer[256], 
             return 1;
         }
     }
+}
+
+void printlist (client *cli_list, int sock)
+{
+    int n,i;
+    char buffer[256];
+    bzero(buffer,256);
+    strcpy(buffer,"List of Online Player is as follows :\n");
+    for (i = 0; i < MAX_Player; i++)
+    {
+        if (cli_list[i].in_use == 1)
+            strcat(buffer,cli_list[i].login_name);
+
+    }
+    n = write(sock,buffer,strlen(buffer));
+    if (n < 0)
+        error("ERROR writing on socket... exiting");
+    return;
 }
