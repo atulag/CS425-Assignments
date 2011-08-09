@@ -37,6 +37,8 @@ void child_pro (client *, struct sockaddr_in, int *, int);
 int addclient (client *, struct sockaddr_in, char [256], int *, int);
 void printlist (client *,int,int);
 int checkRequest (client *,int,int);
+int acceptRequest (client *,int,int,int);
+void sendRequest (client *,int,int);
 
 /*Main function starts here */
 
@@ -126,7 +128,7 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
     {
         sleep(1);
         bzero(buffer,256);
-        strcpy(buffer,"Following options are available :\nL\tPrint the list of Online player.\nE\tExit the game.\nEnter your option : ");
+        strcpy(buffer,"Following options are available :\nL\tPrint the list of Online player.\nR\tRequest a game with another client.\nC\tCheck if you have any game request.\nE\tExit the game.\nEnter your option : ");
         n = write(sock,buffer,strlen(buffer));
         if (n < 0)
             error("ERROR writing on socket... exiting");
@@ -135,7 +137,28 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
         if (n < 0)
             error("ERROR reading from socket... exiting");
         if ((buffer[0] == 'L') || (buffer[0] == 'l'))
+        {
             printlist(cli_list,cli_id,sock);
+            n = checkRequest(cli_list,cli_id,sock);
+            if (n > -1)
+            {
+                n = acceptRequest(cli_list,cli_id,n,sock);
+                if (n)
+                    return;
+            }
+        }
+        else if ((buffer[0] == 'R') || (buffer[0] == 'r'))
+            sendRequest(cli_list,cli_id,sock);
+        else if ((buffer[0] == 'C') || (buffer[0] == 'c'))
+        {
+            n = checkRequest(cli_list,cli_id,sock);
+            if (n > -1)
+            {
+                n = acceptRequest(cli_list,cli_id,n,sock);
+                if (n)
+                    return;
+            }
+        }        
         else if ((buffer[0] == 'E') || (buffer[0] == 'e'))
         {
             *numcli = *numcli -1;
@@ -237,7 +260,7 @@ int checkRequest (client *cli_list, int cli_id, int sock)
     return cli_list[cli_id].request;
 }
 
-void acceptRequest (client *cli_list, int cli_id, int op_id, int sock)
+int acceptRequest (client *cli_list, int cli_id, int op_id, int sock)
 {
     int n;
     char buffer[256];
@@ -271,6 +294,7 @@ void acceptRequest (client *cli_list, int cli_id, int op_id, int sock)
         n = write(sock, buffer, strlen(buffer));
         if (n < 0)
             error("ERROR writing on socket... exiting");
+        return 1;
     }
     else if((buffer[0] == 'N') || (buffer[0] == 'n'))
     {
@@ -279,6 +303,107 @@ void acceptRequest (client *cli_list, int cli_id, int op_id, int sock)
         n = write(sock, buffer, strlen(buffer));
         if (n < 0)
             error("ERROR writing on socket... exiting");
+        return 0;
     }
+    return 0;
+}
+
+void sendRequest (client *cli_list, int cli_id, int sock)
+{
+    int n,i,op_id=-1;
+    char buffer[256];
+    printlist(cli_list,cli_id,sock);
+    n = checkRequest(cli_list,cli_id,sock);
+    if (n > -1)
+    {
+        n = acceptRequest(cli_list,cli_id,n,sock);
+        if (n)
+            return;
+    }
+    
+    bzero(buffer,256);
+    n = read(sock, buffer, 255);
+    if (n < 0)
+        error("ERROR reading from socket... exiting");
+    for (i = 0; i < MAX_Player; i++)
+    {
+        if ((cli_list[i].in_use) && (strcmp(buffer,cli_list[i].login_name) == 0))
+        {
+            op_id = i;
+            break;
+        }
+    }
+    if (op_id == -1)
+    {
+        bzero(buffer,256);
+        strcpy(buffer,"No such client exist.\n");
+        n = write(sock, buffer, strlen(buffer));
+        if (n < 0)
+            error("ERROR writing on socket... exiting");
+        return;
+    }
+    if (cli_list[op_id].request != -1)
+    {
+        bzero(buffer,256);
+        strcpy(buffer,"Specified client has already a request pending.\n");
+        n = write(sock, buffer, strlen(buffer));
+        if (n < 0)
+            error("ERROR writing on socket... exiting");
+        return;
+    }
+    if (cli_list[op_id].in_game)
+    {
+        bzero(buffer,256);
+        strcpy(buffer,"Client is already involved in a game.\n");
+        n = write(sock, buffer, strlen(buffer));
+        if (n < 0)
+            error("ERROR writing on socket... exiting");
+        return;
+    }
+    if (op_id == cli_id)
+    {
+        bzero(buffer,256);
+        strcpy(buffer,"You cannot play game with yourself.\n");
+        n = write(sock, buffer, strlen(buffer));
+        if (n < 0)
+            error("ERROR writing on socket... exiting");
+        return;
+    }
+    cli_list[op_id].request = cli_id;
+    cli_list[cli_id].request = op_id;
+    bzero(buffer,256);
+    strcpy(buffer,"Your request has been sent.\nAwaiting opponent response... ");
+    n = write(sock, buffer, strlen(buffer));
+    if (n < 0)
+    error("ERROR writing on socket... exiting");
+    while(1)
+    {
+        if (cli_list[cli_id].request == -1)
+            break;
+    }
+    if (cli_list[cli_id].in_game)
+    {
+        char port[10];
+        bzero(buffer,256);
+        strcpy(buffer,"Your request has been accepted.\nOpponent information :\nName : ");
+        strcat(buffer,cli_list[op_id].login_name);
+        strcat(buffer,"\tIP Address : ");
+        strcat(buffer,cli_list[op_id].ip_addr);
+        strcat(buffer,"\tPort No. : ");
+        sprintf(port,"%u",cli_list[op_id].portno);
+        strcat(buffer,port);
+        strcat(buffer,"\n");
+        n = write(sock, buffer, strlen(buffer));
+        if (n < 0)
+            error("ERROR writing on socket... exiting");
+        return;
+    }
+    bzero(buffer,256);
+    strcpy(buffer,"Your request has been denied.\n");
+    n = write(sock, buffer, strlen(buffer));
+    if (n < 0)
+        error("ERROR writing on socket... exiting");
     return;
+    
+        
 }
