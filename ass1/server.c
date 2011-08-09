@@ -25,13 +25,15 @@ typedef struct
     short request;
 }client;
 
-/* Additional Function Definitions here */
+/* Additional Function Declarations here */
 
 void error(const char *msg)
 {
     perror(msg);
     exit(1);
 }
+
+void child_pro(client *, struct sockaddr_in, int *, int);
 
 /*Main function starts here */
 
@@ -95,4 +97,25 @@ int main(int argc, char **argv)
     shmctl(shm_id2, IPC_RMID, NULL);
     return 0;
    
+}
+
+/* Additional functions definitions below */
+
+void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int sock)
+{
+    int n;
+    char buffer[256];
+    
+    bzero(buffer,256);
+    strcpy(buffer,"Enter your desired login name : ");
+    n = write(sock,buffer,strlen(buffer));
+    if (n < 0)
+        error("ERROR writing to socket... exiting");
+    bzero(buffer,256);
+    n = read(sock,buffer,strlen(buffer));
+    if (n < 0)
+        error("ERROR reading from socket... exiting");
+    addclient(cli_list,cli_addr,numcli,sock);
+
+    return;
 }
