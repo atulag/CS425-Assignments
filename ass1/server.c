@@ -33,9 +33,10 @@ void error(const char *msg)
     exit(1);
 }
 
-void child_pro(client *, struct sockaddr_in, int *, int);
-int addclient(client *, struct sockaddr_in, char [256], int *, int);
-void printlist(client *,int);
+void child_pro (client *, struct sockaddr_in, int *, int);
+int addclient (client *, struct sockaddr_in, char [256], int *, int);
+void printlist (client *,int,int);
+int checkRequest (client *,int,int);
 
 /*Main function starts here */
 
@@ -105,7 +106,7 @@ int main(int argc, char **argv)
 
 void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int sock)
 {
-    int n;
+    int n,cli_id;
     char buffer[256];
     
     bzero(buffer,256);
@@ -118,8 +119,8 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
     if (n < 0)
         error("ERROR reading from socket... exiting");
     printf("Login name : %s\n",buffer);
-    n = addclient(cli_list,cli_addr,buffer,numcli,sock);
-    if (n == 0)
+    cli_id = addclient(cli_list,cli_addr,buffer,numcli,sock);
+    if (cli_id == -1)
         return;
     while(1)
     {
@@ -134,7 +135,7 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
         if (n < 0)
             error("ERROR reading from socket... exiting");
         if ((buffer[0] == 'L') || (buffer[0] == 'l'))
-            printlist(cli_list,sock);
+            printlist(cli_list,cli_id,sock);
         else if ((buffer[0] == 'E') || (buffer[0] == 'e'))
         {
             *numcli = *numcli -1;
@@ -160,7 +161,7 @@ int addclient (client *cli_list, struct sockaddr_in cli_addr, char buffer[256], 
         n = write(sock,buffer,strlen(buffer));
         if (n < 0)
             error("ERROR writng on socket... exiting");
-        return 0;
+        return -1;
     }
     //if (*numcli == 0)
     //    return 1;
@@ -173,7 +174,7 @@ int addclient (client *cli_list, struct sockaddr_in cli_addr, char buffer[256], 
             n = write(sock,buffer,strlen(buffer));
             if (n < 0)
                 error("ERROR writing on socket... exiting");
-            return 0;
+            return -1;
         }
     }
     *numcli = *numcli+1;
@@ -195,12 +196,12 @@ int addclient (client *cli_list, struct sockaddr_in cli_addr, char buffer[256], 
             if (n < 0)
                 error("ERROR writing on socket... exiting");
             printf("Username : %s\tIP : %s\tPortno : %u\n", cli_list[i].login_name, cli_list[i].ip_addr, cli_list[i].portno);
-            return 1;
+            return i;
         }
     }
 }
 
-void printlist (client *cli_list, int sock)
+void printlist (client *cli_list, int cli_id, int sock)
 {
     int n,i;
     char buffer[256];
@@ -221,4 +222,16 @@ void printlist (client *cli_list, int sock)
         error("ERROR writing on socket... exiting");
     printf("List of online player printed successfully\n");
     return;
+}
+
+int checkRequest (client *cli_list, int cli_id, int sock)
+{
+    int n;
+    char buffer[256];
+    bzero(buffer,256);
+    sprintf(buffer,"%d",cli_list[cli_id].request);
+    n = write(sock, buffer, strlen(buffer));
+    if (n < 0)
+        error("ERROR writing on socket... exiting");
+    return cli_list[cli_id].request;
 }
