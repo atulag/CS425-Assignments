@@ -50,7 +50,7 @@ int main(int argc, char **argv)
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
         error("ERROR opening socket... exiting");
-    bzero((char *) &serv_addr, sizeof(sockaddr_in));
+    bzero((char *) &serv_addr, sizeof(serv_addr));
     portno = atoi(argv[1]);
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
             error("ERROR on accept... exiting");
         pid = fork();
         if (pid < 0)
-            errro("ERROR on fork... exiting");
+            error("ERROR on fork... exiting");
         if (pid == 0)
         {
             close(sockfd);
@@ -124,6 +124,7 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
 int addclient (client *cli_list, struct sockaddr_in cli_addr, char buffer[256], int *numcli, int sock)
 {
     int i,n;
+    char *ip;
     if (*numcli == MAX_Player)
     {
         bzero(buffer,256);
@@ -154,8 +155,9 @@ int addclient (client *cli_list, struct sockaddr_in cli_addr, char buffer[256], 
         {
             cli_list[i].in_use = 1;
             strcpy(cli_list[i].login_name,buffer);
-            if ((cli_list[i].ip_addr = (char *) inet_ntoa(cli_addr.sin_addr)) < 0)
+            if ((ip = (char *) inet_ntoa(cli_addr.sin_addr)) < 0)
                 error("ERROR cannot obtain ip address of client... exiting");
+            strcpy(cli_list[i].ip_addr,ip);
             cli_list[i].portno = ntohs(cli_addr.sin_port);
             cli_list[i].in_game = 0;
             cli_list[i].request = -1;
@@ -164,6 +166,7 @@ int addclient (client *cli_list, struct sockaddr_in cli_addr, char buffer[256], 
             n = write(sock,buffer,strlen(buffer));
             if (n < 0)
                 error("ERROR writing on socket... exiting");
+            printf("Username : %sIP : %s\tPortno : %u", cli_list[i].login_name, cli_list[i].ip_addr, cli_list[i].portno);
             return 1;
         }
     }
