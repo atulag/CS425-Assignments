@@ -139,6 +139,7 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
         else if ((buffer[0] == 'E') || (buffer[0] == 'e'))
         {
             *numcli = *numcli -1;
+            cli_list[cli_id].in_use = 0;
             bzero(buffer,256);
             strcpy(buffer,"Exiting from game.\n");
             n = write(sock,buffer,strlen(buffer));
@@ -234,4 +235,50 @@ int checkRequest (client *cli_list, int cli_id, int sock)
     if (n < 0)
         error("ERROR writing on socket... exiting");
     return cli_list[cli_id].request;
+}
+
+void acceptRequest (client *cli_list, int cli_id, int op_id, int sock)
+{
+    int n;
+    char buffer[256];
+    bzero(buffer,256);
+    strcpy(buffer,"You have a game request from ");
+    strcat(buffer,cli_list[op_id].login_name);
+    strcat(buffer,".\nDo you want to play(Y/N) : ");
+    n = write(sock, buffer, strlen(buffer));
+    if (n < 0)
+        error("ERROR writing on socket... exiting");
+    bzero(buffer,256);
+    n = read(sock, buffer, 255);
+    if (n < 0)
+        error("ERROR reading from socket... exiting");
+    cli_list[cli_id].request = -1;
+    cli_list[op_id].request = -1;
+    if ((buffer[0] == 'Y') || (buffer[0] == 'y'))
+    {
+        char port[10];
+        cli_list[cli_id].in_game = 1;
+        cli_list[op_id].in_game = 1;
+        bzero(buffer,256);
+        strcpy(buffer,"You have accepted the game request.\nOpponent information : \nName : ");
+        strcat(buffer,cli_list[op_id].login_name);
+        strcat(buffer,"\tIP Address : ");
+        strcat(buffer,cli_list[op_id].ip_addr);
+        strcat(buffer,"\tPort No. : ");
+        sprintf(port,"%u",cli_list[op_id].portno);
+        strcat(buffer,port);
+        strcat(buffer,"\n");
+        n = write(sock, buffer, strlen(buffer));
+        if (n < 0)
+            error("ERROR writing on socket... exiting");
+    }
+    else if((buffer[0] == 'N') || (buffer[0] == 'n'))
+    {
+        bzero(buffer,256);
+        strcpy(buffer,"You have denied the game request. ");
+        n = write(sock, buffer, strlen(buffer));
+        if (n < 0)
+            error("ERROR writing on socket... exiting");
+    }
+    return;
 }
