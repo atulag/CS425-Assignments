@@ -23,6 +23,7 @@ typedef struct
     char ip_addr[20];
     unsigned short portno;
     short request;
+    short op_id;
 }client;
 
 /* Additional Function Declarations here */
@@ -129,7 +130,7 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
     {
         sleep(1);
         bzero(buffer,256);
-        strcpy(buffer,"Following options are available :\nL\tPrint the list of Online player.\nR\tRequest a game with another client.\nC\tCheck if you have any game request.\nE\tExit the game.\nEnter your option : ");
+        strcpy(buffer,"\n\nFollowing options are available :\nL\tPrint the list of Online player.\nR\tRequest a game with another client.\nC\tCheck if you have any game request.\nE\tExit the server.\n\nEnter your option : ");
         n = write(sock,buffer,strlen(buffer));
         if (n < 0)
             error("ERROR writing on socket... exiting");
@@ -186,6 +187,17 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
             n = write(sock, buffer, strlen(buffer));
             if (n < 0)
                 error("ERROR writing on socket... exiting");
+            sleep(1);
+            n = checkRequest(cli_list,cli_id,sock);
+            if (n > -1)
+            {
+                n = acceptRequest(cli_list,cli_id,n,sock);
+                if (n)
+                {
+                    exitGame(cli_list, numcli, cli_id, sock);
+                    return;
+                }
+            }
         }
     }
     return;
@@ -231,6 +243,7 @@ int addclient (client *cli_list, struct sockaddr_in cli_addr, char buffer[256], 
             cli_list[i].portno = ntohs(cli_addr.sin_port);
             cli_list[i].in_game = 0;
             cli_list[i].request = -1;
+            cli_list[i].op_id = -1;
             bzero(buffer,256);
             strcpy(buffer,"Logged in successfully.\nNow you can play the game.\n");
             n = write(sock,buffer,strlen(buffer));
@@ -244,9 +257,10 @@ int addclient (client *cli_list, struct sockaddr_in cli_addr, char buffer[256], 
 
 void printlist (client *cli_list, int cli_id, int sock)
 {
-    int n,i;
-    char buffer[256];
+    int n,i,flag = 0;
+    char buffer[256],game[150];
     bzero(buffer,256);
+    bzero(game,150);
     strcpy(buffer,"\nList of Online Player is as follows :\n");
     for (i = 0; i < MAX_Player; i++)
     {
@@ -262,6 +276,31 @@ void printlist (client *cli_list, int cli_id, int sock)
     if (n < 0)
         error("ERROR writing on socket... exiting");
     printf("List of online player printed successfully\n");
+    strcpy(game,"");
+    for (i = 0; i < MAX_Player; i++)
+    {
+        if ((cli_list[i].in_use) && (cli_list[i].in_game) && (i < cli_list[i].op_id))
+        {
+            strcat(game,"\t");
+            strcat(game, cli_list[i].login_name);
+            strcat(game, " vs ");
+            strcat(game, cli_list[cli_list[i].op_id].login_name);
+            strcat(game, "\n");
+            flag = 1;
+        }
+    }
+    bzero(buffer,256);
+    if (flag)
+    {
+        strcpy(buffer,"\n Following client are involved in a game:\n");
+        strcat(buffer, game);
+    }
+    else
+        strcpy(buffer, "\n No client are involved in a game.\n");
+    sleep(1);
+    n = write(sock,buffer,strlen(buffer));
+    if (n < 0)
+        error("ERROR writing on socket... exiting");
     return;
 }
 
@@ -300,6 +339,8 @@ int acceptRequest (client *cli_list, int cli_id, int op_id, int sock)
         char port[10];
         cli_list[cli_id].in_game = 1;
         cli_list[op_id].in_game = 1;
+        cli_list[cli_id].op_id = op_id;
+        cli_list[op_id].op_id = cli_id;
         printf("%s and %s are involved in a game.\n",cli_list[cli_id].login_name, cli_list[op_id].login_name);
         bzero(buffer,256);
         strcpy(buffer,"You have accepted the game request.\nOpponent information : \nName : ");

@@ -97,6 +97,11 @@ int main(int argc, char *argv[])
               n = read(sockfd,buffer,255);
               if (n < 0)
                    error("ERROR reading from socket... exiting");
+              printf("%s",buffer);
+              bzero(buffer,256);
+              n = read(sockfd,buffer,255);
+              if (n < 0)
+                   error("ERROR reading from socket... exiting");
               if (strcmp(buffer,"-1") == 0);
               else
                    acceptRequest(sockfd);
@@ -130,6 +135,13 @@ int main(int argc, char *argv[])
               if (n < 0)
                    error("ERROR reading from socket... exiting");
               printf("%s",buffer);
+              bzero(buffer,256);
+              n = read(sockfd,buffer,255);
+              if (n < 0)
+                   error("ERROR reading from socket... exiting");
+              if (strcmp(buffer,"-1") == 0);
+              else
+                   acceptRequest(sockfd);
          }
     }
     close(sockfd);
@@ -183,6 +195,11 @@ void sendRequest(int sock)
 {
     int n;
     char buffer[256];
+    bzero(buffer,256);
+    n = read(sock, buffer, 255);
+    if (n < 0)
+        error("ERROR reading from socket");
+    printf("%s",buffer);
     bzero(buffer,256);
     n = read(sock, buffer, 255);
     if (n < 0)
