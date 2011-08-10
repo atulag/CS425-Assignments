@@ -148,7 +148,7 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
                 n = acceptRequest(cli_list,cli_id,n,sock);
                 if (n)
                 {
-                    exitGame(cli_list, numcli, cli_id, sock);
+                    //exitGame(cli_list, numcli, cli_id, sock);
                     return;
                 }
             }
@@ -158,7 +158,7 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
             sendRequest(cli_list,cli_id,sock);
             if (cli_list[cli_id].in_game)
             {
-                exitGame(cli_list, numcli, cli_id, sock);
+                //exitGame(cli_list, numcli, cli_id, sock);
                 return;
             }
         }
@@ -170,7 +170,7 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
                 n = acceptRequest(cli_list,cli_id,n,sock);
                 if (n)
                 {
-                    exitGame(cli_list, numcli, cli_id, sock);
+                    //exitGame(cli_list, numcli, cli_id, sock);
                     return;
                 }
             }
@@ -194,7 +194,7 @@ void child_pro (client *cli_list, struct sockaddr_in cli_addr, int *numcli, int 
                 n = acceptRequest(cli_list,cli_id,n,sock);
                 if (n)
                 {
-                    exitGame(cli_list, numcli, cli_id, sock);
+                    //exitGame(cli_list, numcli, cli_id, sock);
                     return;
                 }
             }
@@ -485,6 +485,7 @@ void exitGame(client *cli_list, int *numcli, int cli_id, int sock)
     *numcli = *numcli - 1;
     printf("%s has exited from the server.\n",cli_list[cli_id].login_name);
     cli_list[cli_id].in_use = 0;
+    cli_list[cli_id].request = -1;
     bzero(buffer,256);
     strcpy(buffer,"Exiting from game.\n");
     n = write(sock,buffer,strlen(buffer));
