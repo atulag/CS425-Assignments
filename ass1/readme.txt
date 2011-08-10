@@ -24,3 +24,14 @@ To run the client,you have to follow below commands :
 $gcc -o client client.c
 $./client <server ip> <portno>
 server ip is the ip address of the server and portno is the port number of server.
+
+Features included are :
+1. Print the list of all online player.
+2. Request a game with another client. This is done if and only if you do not have any request pending and the request can be sent to those client which do not have a request or are involved in a game.
+3. Check if you have any request.
+4. Exit the game server.
+5. If the game request is accepted by the client, then i have closed the client program, however in the server, the client is shown online as a client involved in a game.
+
+Future Modifications:
+1. We can give the clients involved in a game option to chat rather closing their program.
+2. An option for player involved in game to quit the game and return to server (not exit from the server).
